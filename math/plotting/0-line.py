@@ -1,4 +1,4 @@
-##!/usr/bin/env python3
+#!/usr/bin/env python3
 '''
 Plots y = x^3 as a red line graph
 '''
