@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-""" a function def matrix_transpose(matrix): that returns the transpose of a 2D matrix, matrix:"""
+""" defines function that transposes a 2D matrix """
+
 
 def matrix_transpose(matrix):
-    
+    """ returns new matrix that is a transpose of the given 2D matrix """
     matrix_transpose = []
     for index, row in enumerate(matrix):
         if index is 0:
