@@ -1,59 +1,42 @@
 #!/usr/bin/env python3
 """
-Defines function that updates the weights with Dropout regularization
-using gradient descent
+Gradient Descent with Dropout
 """
-
 import numpy as np
 
 
 def dropout_gradient_descent(Y, weights, cache, alpha, keep_prob, L):
-    """
-    Updates the weights with Dropout regularization using gradient descent
-
-    parameters:
-        Y [one-hot numpy.ndarray of shape (classes, m)]:
-            contains the correct labels for the data
-            classes: number of classes
-            m: number of data points
-        weights [dict]:
-            contains the weights and biases of the network
-        cache [dict]:
-            contains the outputs and dropout masks of each layer
-        alpha [float]:
-            learning rate
-        keep_prob [float]:
-            the probability that a node will be kept
-        L [int]:
-            number of layers in the network
-
-    all layers should use the tanh activation function except last
-    last layer should use softmax activation function
-
-    the weights of the network should be updated in place
-    """
-    m = Y.shape[1]
-    back = {}
-    for index in range(L, 0, -1):
-        A = cache["A{}".format(index - 1)]
-        if index == L:
-            back["dz{}".format(index)] = (cache["A{}".format(index)] - Y)
-            dz = back["dz{}".format(index)]
-
+    """function that updates the weights and biases of a nn using
+    gradient descent with Dropout"""
+    weights_copy = weights.copy()
+    for i in range(L, 0, -1):
+        m = Y.shape[1]
+        if i != L:
+            # all layers use a tanh activation, except last
+            # introduce call to tanh_prime method
+            dZi = np.multiply(np.matmul(
+                weights_copy['W' + str(i + 1)].T, dZi
+            ), tanh_prime(cache['A' + str(i)]))
+            # pass dZi through same dropout mask as that
+            # saved in cache during forward_prop
+            # dropout mask applied to hidden layers only
+            # regularize and normalize by keep_prob
+            dZi *= cache['D' + str(i)]
+            dZi /= keep_prob
         else:
-            dz_prev = back["dz{}".format(index + 1)]
-            A_current = cache["A{}".format(index)]
-            back["dz{}".format(index)] = (
-                np.matmul(W_prev.transpose(), dz_prev) *
-                (A_current * (1 - A_current)))
-            dz = back["dz{}".format(index)]
-            dz *= cache["D{}".format(index)]
-            dz /= keep_prob
+            # last layer uses a softmax activation
+            dZi = cache['A' + str(i)] - Y
+        dWi = np.matmul(dZi, cache['A' + str(i - 1)].T) / m
+        dbi = np.sum(dZi, axis=1, keepdims=True) / m
+        weights['W' + str(i)] = weights_copy['W' + str(i)] - alpha * dWi
+        weights['b' + str(i)] = weights_copy['b' + str(i)] - alpha * dbi
 
-        dW = (1 / m) * (np.matmul(dz, A.transpose()))
-        db = (1 / m) * np.sum(dz, axis=1, keepdims=True)
-        W_prev = weights["W{}".format(index)]
-        weights["W{}".format(index)] = (
-            weights["W{}".format(index)] - (alpha * dW))
-        weights["b{}".format(index)] = (
-            weights["b{}".format(index)] - (alpha * db))
+
+def tanh(Y):
+    """define the tanh activation function"""
+    return np.tanh(Y)
+
+
+def tanh_prime(Y):
+    """define the derivative of the activation function tanh"""
+    return 1 - Y ** 2
