@@ -1,114 +1,61 @@
 #!/usr/bin/env python3
 """
-Creates class that performs Bayesian optimization
-on a noiseless 1D Gaussian process
+4-bayes_opt.py
 """
-
-
-from scipy.stats import norm
 import numpy as np
+from scipy.stats import norm
 GP = __import__('2-gp').GaussianProcess
 
 
 class BayesianOptimization:
     """
-    Performs Bayesian optimization on a noiseless 1D Gaussian process
-
-    class constructor:
-        def __init__(self, f, X_init, Y_init, bounds, ac_samples, l=1,
-                     sigma_f=1, xsi=0.01, minimize=True)
-
-
-    public instance attributes:
-        f: the black box function
-        gp: an instance of the class GaussianProcess
-        X_s [numpy.ndarray of shape (ac_samples, 1)]:
-            containing all acquisition sample points,
-                evenly spaced between min and max
-            ac_samples: number of samples
-        xsi: the exploration-exploitation factor
-        minimize [boolean]: for minimization versus maximization
-
-    public instance methods:
-        def acquisition(self):
-            calculates the next best sample location
+    Class that instantiates a Bayesian optimization
+    on a noiseless 1D Gaussian process
     """
-    def __init__(self, f, X_init, Y_init, bounds, ac_samples, l=1,
-                 sigma_f=1, xsi=0.01, minimize=True):
-        """
-        Class constructor
 
-        parameters:
-            f [function]:
-                the black-box function to be optimized
-            X_init [numpy.ndarray of shape (t, 1)]:
-                representing the inputs sampled with the black-box function
-                t: number of samples
-            Y_init [numpy.ndarry of shape (t, 1)]:
-                representing outputs of the black-box function for each input
-            bounds [tuple of (min, max)]:
-                representing the bounds of the space to find the optimal point
-            ac_samples [int]:
-                number of samples that should be analyzed during acquisition
-            l [int or float]:
-                length parameter for the kernel
-            sigma_f [int or float]:
-                standard deviation given to output of the black-box function
-            xsi [float]:
-                the exploration-exploitation factor for acquisition
-            minimize [boolean]:
-                determines if optimization should be performed for min or max
-                True: performed for minimization
-                False: performed for maximization
-        """
-        if type(X_init) is not np.ndarray or len(X_init.shape) != 2:
-            raise TypeError("X_init must be numpy.ndarray of shape (t, 1)")
-        t, one = X_init.shape
-        if one != 1:
-            raise TypeError("X_init must be numpy.ndarray of shape (t, 1)")
-        if type(Y_init) is not np.ndarray or len(Y_init.shape) != 2:
-            raise TypeError("Y_init must be numpy.ndarray of shape (t, 1)")
-        t_check, one = Y_init.shape
-        if one != 1 or t_check != t:
-            raise TypeError("Y_init must be numpy.ndarray of shape (t, 1)")
-        if type(bounds) is not tuple or len(bounds) != 2:
-            raise TypeError("bounds must be a tuple of (min, max)")
-        min, max = bounds
-        if type(min) is not int and type(min) is not float:
-            raise TypeError("min in bounds must be int or float")
-        if type(max) is not int and type(max) is not float:
-            raise TypeError("max in bounds must be int or float")
-        if min >= max:
-            raise ValueError("min from bounds must be less than max")
-        if type(l) is not int and type(l) is not float:
-            raise TypeError(
-                "l must be int or float to represent kernel length parameter")
-        if type(sigma_f) is not int and type(sigma_f) is not float:
-            raise TypeError(
-                "sigma_f must be int or float to represent standard deviation")
-        if type(xsi) is not int and type(xsi) is not float:
-            raise TypeError(
-                "xsi must be int or float to represent \
-                exploration-exploitation factor")
-        if type(minimize) is not bool:
-            raise TypeError("minimize must be boolean to indicate if \
-            optimization should be formed for minimization or maximization")
+    def __init__(self, f, X_init, Y_init, bounds,
+                 ac_samples, l=1, sigma_f=1, xsi=0.01, minimize=True):
+        """define and initialize variables and methods"""
+
         self.f = f
         self.gp = GP(X_init, Y_init, l, sigma_f)
-        self.X_s = X_init
+        self.X_s = np.linspace(bounds[0], bounds[1],
+                               num=ac_samples)[..., np.newaxis]
         self.xsi = xsi
         self.minimize = minimize
 
     def acquisition(self):
-        """
-        Calculates the next best sample location
-            using the Expected Improvement acquisition function
+        """function that calculates the next best sample location"""
 
-        returns:
-            X_next, EI
-            X_next [numpy.ndarray of shape (1,)]:
-                represents the next best sample point
-            EI [numpy.ndarray of shape (ac_samples,)]:
-                contains the expected improvement of each potential sample
-        """
-        return None, None
+        # Compute mu and sigma in a call to predict() on gp
+        mu, sigma = self.gp.predict(self.X_s)
+        # print("mu:", mu, mu.shape)
+        # print("sigma:", sigma, sigma.shape)
+
+        # Note: sigma of shape (s,)
+        Z = np.zeros(sigma.shape)
+        if self.minimize is True:
+            f_plus = np.min(self.gp.Y)
+            Z_NUM = f_plus - mu - self.xsi
+        else:
+            f_plus = np.max(self.gp.Y)
+            Z_NUM = mu - f_plus - self.xsi
+
+        for i in range(sigma.shape[0]):
+            if sigma[i] > 0:
+                Z[i] = Z_NUM[i] / sigma[i]
+            else:
+                Z[i] = 0
+
+        # Compute the Expected Improvement (EI)
+        EI = np.zeros(sigma.shape)
+        for i in range(sigma.shape[0]):
+            if sigma[i] > 0:
+                EI[i] = Z_NUM[i] * norm.cdf(Z[i]) + sigma[i] * norm.pdf(Z[i])
+            else:
+                EI[i] = 0
+        X_next = self.X_s[np.argmax(EI)]
+
+        # print("EI:", EI)
+        # print("self.X_s:", self.X_s)
+        return X_next, EI

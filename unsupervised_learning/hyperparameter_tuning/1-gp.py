@@ -1,135 +1,76 @@
 #!/usr/bin/env python3
 """
-Creates class that represents a noiseless 1D Gaussian process
+1-gp.py
 """
-
-
 import numpy as np
 
 
 class GaussianProcess:
-    """
-    Represents a noiseless 1D Gaussian process
+    """Class that instantiates a noiseless 1D Gaussian process"""
 
-    class constructor:
-        def __init__(self, X_init, Y_init, l=1, sigma_f=1)
-
-    public instance attributes:
-        X [numpy.ndarray of shape (t, 1)]:
-            representing the inputs sampled with the black-box function
-            t: number of samples
-        Y [numpy.ndarry of shape (t, 1)]:
-            representing the outputs of the black-box function for each input
-        l [int]:
-            length parameter for the kernel
-        sigma_F [float]:
-            standard deviation given to the output of the black-box function
-        K [numpy.ndarray]:
-            representing the current covariance kernel matrix
-
-    public instance method:
-        def kernel(self, X1, X2):
-            calculates the covariance kernel matrix between two matrices
-        def predict(self, X_s):
-            predicts mean and standard deviation of points in Gaussian process
-    """
     def __init__(self, X_init, Y_init, l=1, sigma_f=1):
-        """
-        Class constructor
+        """define and initialize variables and methods"""
 
-        parameters:
-            X_init [numpy.ndarray of shape (t, 1)]:
-                representing the inputs sampled with the black-box function
-                t: number of samples
-            Y_init [numpy.ndarry of shape (t, 1)]:
-                representing outputs of the black-box function for each input
-            l [int or float]:
-                length parameter for the kernel
-            sigma_f [int or float]:
-                standard deviation given to output of the black-box function
-        """
-        if type(X_init) is not np.ndarray or len(X_init.shape) != 2:
-            raise TypeError("X_init must be numpy.ndarray of shape (t, 1)")
-        t, one = X_init.shape
-        if one != 1:
-            raise TypeError("X_init must be numpy.ndarray of shape (t, 1)")
-        if type(Y_init) is not np.ndarray or len(Y_init.shape) != 2:
-            raise TypeError("Y_init must be numpy.ndarray of shape (t, 1)")
-        t_check, one = Y_init.shape
-        if one != 1 or t_check != t:
-            raise TypeError("Y_init must be numpy.ndarray of shape (t, 1)")
-        if type(l) is not int and type(l) is not float:
-            raise TypeError(
-                "l must be int or float to represent kernel length parameter")
-        if type(sigma_f) is not int and type(sigma_f) is not float:
-            raise TypeError(
-                "sigma_f must be int or float to represent standard deviation")
         self.X = X_init
         self.Y = Y_init
         self.l = l
         self.sigma_f = sigma_f
-        self.K = self.kernel(X_init, X_init)
+        self.K = self.kernel(self.X, self.X)
 
     def kernel(self, X1, X2):
         """
-        Calculates the covariance kernel matrix between two matrices
-
-        parameters:
-            X1 [numpy.ndarray of shape (m, 1)]:
-                first matrix with m number of samples
-            X2 [numpy.ndarray of shape (n, 1)]:
-                second matrix with n number of samples
-
-        The kernel should use the Radial Basis Function (RBF)
-
-        returns:
-            [numpy.ndarray of shape (m, n)]:
-                the covariance kernel matrix between X1 and X2
+        function that calculates the covariance kernel matrix
+        between two matrices
         """
-        if type(X1) is not np.ndarray or len(X1.shape) != 2:
-            raise TypeError("X1 must be numpy.ndarray of shape (m, 1)")
-        m, one = X1.shape
-        if one != 1:
-            raise TypeError("X1 must be numpy.ndarray of shape (m, 1)")
-        if type(X2) is not np.ndarray or len(X2.shape) != 2:
-            raise TypeError("X2 must be numpy.ndarray of shape (n, 1)")
-        n, one = X2.shape
-        if one != 1:
-            raise TypeError("X2 must be numpy.ndarray of shape (n, 1)")
-        X1_sum = np.sum(X1 ** 2, 1).reshape(-1, 1)
-        X2_sum = np.sum(X2 ** 2, 1)
-        sqdist = X1_sum + X2_sum - 2 * np.matmul(X1, X2.T)
-        cov = (self.sigma_f ** 2) * np.exp(-0.5 / (self.l ** 2) * sqdist)
-        return cov
+
+        # Composition of the constant kernel with the
+        # radial basis function (RBF) kernel, which encodes
+        # for smoothness of functions (i.e. similarity of
+        # inputs in space corresponds to the similarity of outputs)
+
+        # Two hyperparameters: signal variance (sigma_f**2) and lengthscale l
+        # K: Constant * RBF kernel function
+
+        # Compute "dist_sq" (helper to K)
+        # X1: shape (m, 1), m points of 1 coordinate
+        # X2: shape (n, 1), n points of 1 coordinate
+        a = np.sum(X1 ** 2, axis=1, keepdims=True)
+        b = np.sum(X2 ** 2, axis=1, keepdims=True)
+        c = np.matmul(X1, X2.T)
+        # Note: Ensure a and b are aligned with c: shape (m, n)
+        # -> b should be a row vector for the subtraction with c
+        dist_sq = a + b.reshape(1, -1) - 2 * c
+        # print("dist_sq:", dist_sq)
+
+        # K: covariance kernel matrix of shape (m, n)
+        K = (self.sigma_f ** 2) * np.exp(-0.5 * (1 / (self.l ** 2)) * dist_sq)
+
+        return K
 
     def predict(self, X_s):
         """
-        Predicts mean and standard deviation of points in a Gaussian process
-
-        parameters:
-            X_s [numpy.ndarray of shape (s, 1)]:
-                contains all the points whose mean and standard deviation
-                    should be calculated
-                s: number of sample points
-
-        returns:
-            mu, sigma
-                mu [numpy.ndarray of shape (s,)]:
-                    contains the mean for each point in X_s
-                sigma [numpy.ndarray of shape (s,)]:
-                    contains the variance for each point in X_s
+        function that predicts the mean and standard deviation of points
+        in a Gaussian process
         """
-        if type(X_s) is not np.ndarray or len(X_s.shape) != 2:
-            raise TypeError("X_s must be numpy.ndarray of shape (s, 1)")
-        s, one = X_s.shape
-        if one != 1:
-            raise TypeError("X_s must be numpy.ndarray of shape (s, 1)")
+
+        # Call K
         K = self.K
+        # Compute K_s in a call to kernel()
         K_s = self.kernel(self.X, X_s)
-        K_inv = np.linalg.inv(K)
+        # Compute K_ss in a call to kernel()
         K_ss = self.kernel(X_s, X_s)
-        mu_s = K_s.T.dot(K_inv).dot(self.Y)
-        mu = mu_s.reshape(-1)
-        cov_s = K_ss - K_s.T.dot(K_inv).dot(K_s)
+        # Call Y
+        Y = self.Y
+
+        # The prediction follows a normal distribution completely
+        # described by the mean "mu" and the covariance "sigma**2"
+
+        # Compute the mean "mu"
+        K_inv = np.linalg.inv(K)
+        mu_s = np.matmul(np.matmul(K_s.T, K_inv), Y).reshape(-1)
+        # Compute the covariance matrix "cov_s"
+        cov_s = K_ss - np.matmul(np.matmul(K_s.T, K_inv), K_s)
+        # Infer the standard deviation "sigma"
         sigma = np.diag(cov_s)
-        return mu, sigma
+
+        return mu_s, sigma
