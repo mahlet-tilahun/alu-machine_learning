@@ -1,30 +1,18 @@
 #!/usr/bin/env python3
-"""
-Defines function that calculates total intra-cluster variance for a data set
-"""
-
-
+""" clustering """
 import numpy as np
 
 
 def variance(X, C):
-    """
-    Calculates the total intra-cluster variance for a data set
-
-    parameters:
-        X [numpy.ndarray of shape (n, d)]:
-            contains the dataset used for K-means clustering
-            n: the number of data points
-            d: the number of dimensions for each data point
-        C [numpy.ndarray of shape (k, d)]:
-            contains the centroid means for each cluster
-            k: the number of clusters
-            d: the number of dimensions for each data point
-
-    should not use any loops
-
-    returns:
-        var [float]: total variance
-        or None on failure
-    """
-    return None
+    """calculates the total intra-cluster variance"""
+    if not isinstance(X, np.ndarray) or len(X.shape) != 2:
+        return None
+    if not isinstance(C, np.ndarray) or len(C.shape) != 2:
+        return None
+    try:
+        distances = np.sum(np.square(X - C[:, np.newaxis]), axis=2)
+        min_distances = np.min(distances, axis=0)
+        intra = np.sum(min_distances)
+        return intra
+    except Exception as e:
+        return None

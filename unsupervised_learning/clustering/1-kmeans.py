@@ -1,62 +1,46 @@
 #!/usr/bin/env python3
-"""
-Defines function that performs K-means on a dataset
-"""
-
-
+""" clustering """
 import numpy as np
 
 
 def kmeans(X, k, iterations=1000):
-    """
-    Performs K-means on a dataset
-
-    parameters:
-        X [numpy.ndarray of shape (n, d)]:
-            contains the dataset that will be used for K-means clustering
-            n: the number of data points
-            d: the number of dimensions for each data point
-        k [positive int]:
-            contains the number of clusters
-        iterations [positive int]:
-            contains the maximum number of iterations that should be performed
-
-    if no change in the cluster centroids occurs between iterations,
-        the function should return
-
-    initialize the cluster centroids using a multivariate unitform distribution
-
-    if a cluster contains no data points during the update step,
-        its centroid should be reinitialized
-
-    should use:
-        numpy.random.uniform exactly twice
-        at most 2 loops
-
-    returns:
-        C, clss:
-            C [numpy.ndarray of shape (k, d)]:
-                containing the centroid means for each cluster
-            clss [numpy.ndarray of shape (n,)]:
-                containting the index of the cluster in c
-                    that each data point belongs to
-        or None, None on failure
-    """
-    # type checks to catch failure
-    if type(X) is not np.ndarray or len(X.shape) != 2:
-        return None, None
+    """performs K-means on a dataset"""
     if type(k) is not int or k <= 0:
+        return None, None
+    if type(X) is not np.ndarray or len(X.shape) != 2:
         return None, None
     if type(iterations) is not int or iterations <= 0:
         return None, None
+    # X.shape is (250, 2), k = 5
     n, d = X.shape
-    # initialize cluster centroids using multivariate uniform distribution
-    low = np.min(X, axis=0)
-    high = np.max(X, axis=0)
-    C = np.random.uniform(low, high, size=(k, d))
-    # save copy of centroids to compare against later
-    save_centroids = np.copy(C)
-    if C.all() == saved_centroids.all():
-        return C, clss
-    saved_centroids = np.copy(C)
-    return C, clss
+    centroids = np.random.uniform(
+        low=np.min(X, axis=0),
+        high=np.max(X, axis=0),
+        size=(k, d)
+    )
+    classes = np.zeros(X.shape[0])
+    for i in range(iterations):
+        # temp to test against new centroid for change
+        temp = centroids.copy()
+        # find the distance using squared distance
+        distances = np.sum(np.square(X - centroids[:, np.newaxis]), axis=2)
+        # assign each value to class depending on min distance
+        classes = np.argmin(distances, axis=0)
+        for j in range(k):
+            # arrange X by classes and pull out where class equal to j
+            if len(X[classes == j]) == 0:
+                centroids[j] = np.random.uniform(
+                                low=np.min(X, axis=0),
+                                high=np.max(X, axis=0),
+                                size=(1, d))
+            else:
+                centroids[j] = np.mean(X[classes == j], axis=0)
+        distances = np.sum(np.square(X - centroids[:, np.newaxis]), axis=2)
+        classes = np.argmin(distances, axis=0)
+        # --- Select random points for centroids
+        # plt.scatter(X[:, 0], X[:, 1], s=10)
+        # plt.scatter(centroids[:, 0], centroids[:, 1], c='r', s=13)
+        # plt.show()
+        if np.all(centroids == temp):
+            return centroids, classes
+    return centroids, classes

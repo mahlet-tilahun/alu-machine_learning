@@ -1,47 +1,32 @@
 #!/usr/bin/env python3
-"""
-Defines function that initializes cluster centroids for K-means
-"""
-
-
+""" clustering """
 import numpy as np
 
 
 def initialize(X, k):
-    """
-    Initializes cluster centroids for K-means
-
-    parameters:
-        X [numpy.ndarray of shape (n, d)]:
-            contains the dataset that will be used for K-means clustering
-            n: the number of data points
-            d: the number of dimensions for each data point
-        k [positive int]:
-            contains the number of clusters
-
-    cluster centroids initialized with a multivariate uniform distribution
-        along each dimension in d:
-        - minimum values for distribution should be the min values of X
-            along each dimension in d
-        - maximum values for distribution should be the max values of X
-            along each dimension in d
-        - should only use numpy.random.uniform exactly once
-
-    returns:
-        [numpy.ndarray of shape (k, d)]:
-            containing the initialized centroids for each cluster
-        or None on failure
-    """
-    # type checks to catch failure
-    if type(X) is not np.ndarray or len(X.shape) != 2:
+    """ initialize """
+    if not isinstance(X, np.ndarray) or len(X.shape) != 2:
         return None
-    if type(k) is not int or k <= 0:
+    if not isinstance(k, int) or k < 1:
         return None
+    # X.shape is (250, 2)
     n, d = X.shape
-    # min values of X along each dimension in d
-    low = np.min(X, axis=0)
-    # max values of X along each dimension in d
-    high = np.max(X, axis=0)
-    # initialize cluster centroids with multivariate uniform distribution
-    centroids = np.random.uniform(low, high, size=(k, d))
-    return centroids
+    small = np.min(X, axis=0)
+    large = np.max(X, axis=0)
+    new = np.random.uniform(
+        low=small,
+        high=large,
+        size=(k, d)
+    )
+    # --- Select random points for centroids
+    # centroids = X.copy()
+    # np.random.shuffle(centroids)
+    # cent = centroids[:k]
+    # -- We can use 2 scatter plot
+    # plt.scatter(X[:, 0], X[:, 1], s=10)
+    # plt.scatter(cent[:, 0], cent[:, 1], c='r', s=8)
+    # plt.show()
+    # -- OR WE CAN USE ONE plot
+    # plt.plot(X[:, 0], X[:, 1], 'ro', cent[:, 0], cent[:, 1], 'bs')
+    # plt.show()
+    return new
