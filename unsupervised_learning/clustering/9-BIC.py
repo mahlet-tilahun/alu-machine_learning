@@ -11,16 +11,15 @@ def BIC(X, kmin=1, kmax=None, iterations=1000, tol=1e-5,
     """Finds the best number of clusters for a GMM using BIC."""
     if (not isinstance(X, np.ndarray) or X.ndim != 2
             or X.shape[0] == 0 or X.shape[1] == 0
-            or not np.all(np.isfinite(X))
-            or isinstance(kmin, bool)
-            or not isinstance(kmin, int) or kmin <= 0
+            or not isinstance(kmin, int) or isinstance(kmin, bool)
+            or kmin <= 0
             or (kmax is not None and
-                (isinstance(kmax, bool)
-                 or not isinstance(kmax, int) or kmax <= 0))
-            or isinstance(iterations, bool)
-            or not isinstance(iterations, int) or iterations <= 0
+                (not isinstance(kmax, int) or isinstance(kmax, bool)
+                 or kmax <= 0))
+            or not isinstance(iterations, int)
+            or isinstance(iterations, bool) or iterations <= 0
             or not isinstance(tol, (int, float))
-            or isinstance(tol, bool) or not np.isfinite(tol) or tol < 0
+            or isinstance(tol, bool) or tol < 0
             or not isinstance(verbose, bool)):
         return None, None, None, None
 
@@ -40,25 +39,16 @@ def BIC(X, kmin=1, kmax=None, iterations=1000, tol=1e-5,
     best_bic = np.inf
 
     for idx, k in enumerate(range(kmin, kmax + 1)):
-        try:
-            result = expectation_maximization(
-                X, k, iterations, tol, verbose
-            )
-        except (TypeError, ValueError, np.linalg.LinAlgError):
-            return None, None, None, None
+        result = expectation_maximization(
+            X, k, iterations, tol, verbose
+        )
 
-        if (result is None or len(result) != 5
-                or any(value is None for value in result)):
+        if (result[0] is None or result[1] is None
+                or result[2] is None or result[3] is None
+                or result[4] is None):
             return None, None, None, None
 
         pi, m, S, g, log_likelihood = result
-
-        if (not np.isfinite(log_likelihood)
-                or not np.all(np.isfinite(pi))
-                or not np.all(np.isfinite(m))
-                or not np.all(np.isfinite(S))
-                or not np.all(np.isfinite(g))):
-            return None, None, None, None
 
         log_likelihoods[idx] = log_likelihood
 
