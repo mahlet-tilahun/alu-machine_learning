@@ -1,32 +1,35 @@
 #!/usr/bin/env python3
-""" clustering """
+
+"""
+Initialize cluster centroids
+"""
+
 import numpy as np
 
 
 def initialize(X, k):
-    """ initialize """
-    if not isinstance(X, np.ndarray) or len(X.shape) != 2:
+    """
+    Initializes cluster centroids for K-means clustering.
+
+    Parameters:
+    X (numpy.ndarray): A 2D numpy array of shape (n, d) containing the dataset
+                       that will be used for K-means clustering.
+                       - n is the number of data points
+                       - d is the number of dimensions for each data point
+    k (int): A positive integer representing the number of clusters.
+
+    Returns:
+    numpy.ndarray: A 2D numpy array of shape (k, d) containing the initialized
+                   centroids for each cluster.
+                   Returns None on failure
+    """
+
+    if not isinstance(X, np.ndarray) or X.ndim != 2:
         return None
-    if not isinstance(k, int) or k < 1:
+    if not isinstance(k, int) or k <= 0:
         return None
-    # X.shape is (250, 2)
-    n, d = X.shape
-    small = np.min(X, axis=0)
-    large = np.max(X, axis=0)
-    new = np.random.uniform(
-        low=small,
-        high=large,
-        size=(k, d)
-    )
-    # --- Select random points for centroids
-    # centroids = X.copy()
-    # np.random.shuffle(centroids)
-    # cent = centroids[:k]
-    # -- We can use 2 scatter plot
-    # plt.scatter(X[:, 0], X[:, 1], s=10)
-    # plt.scatter(cent[:, 0], cent[:, 1], c='r', s=8)
-    # plt.show()
-    # -- OR WE CAN USE ONE plot
-    # plt.plot(X[:, 0], X[:, 1], 'ro', cent[:, 0], cent[:, 1], 'bs')
-    # plt.show()
-    return new
+
+    low_values = np.min(X, axis=0)
+    high_values = np.max(X, axis=0)
+
+    return np.random.uniform(low_values, high_values, size=(k, X.shape[1]))
