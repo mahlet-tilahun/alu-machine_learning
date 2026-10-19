@@ -40,13 +40,15 @@ def BIC(X, kmin=1, kmax=None, iterations=1000, tol=1e-5,
     best_bic = np.inf
 
     for idx, k in enumerate(range(kmin, kmax + 1)):
-        result = expectation_maximization(
-            X, k, iterations, tol, verbose
-        )
+        try:
+            result = expectation_maximization(
+                X, k, iterations, tol, verbose
+            )
+        except (TypeError, ValueError, np.linalg.LinAlgError):
+            return None, None, None, None
 
-        if (result[0] is None or result[1] is None
-                or result[2] is None or result[3] is None
-                or result[4] is None):
+        if (result is None or len(result) != 5
+                or any(value is None for value in result)):
             return None, None, None, None
 
         pi, m, S, g, log_likelihood = result
