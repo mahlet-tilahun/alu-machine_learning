@@ -1,58 +1,91 @@
 #!/usr/bin/env python3
-'''K-means
-https://medium.com/analytics-vidhya/k-means-clustering-with-python-77b20c2d538d
-https://www.youtube.com/watch?v=_aWzGGNrcic
-'''
+
+"""
+Kmeans
+"""
 
 import numpy as np
 
 
+def initialize(X, k):
+    """
+    Initializes cluster centroids for K-means clustering.
+
+    Parameters:
+    X (numpy.ndarray): A 2D numpy array of shape (n, d) containing the dataset
+                       that will be used for K-means clustering.
+                       - n is the number of data points
+                       - d is the number of dimensions for each data point
+    k (int): A positive integer representing the number of clusters.
+
+    Returns:
+    numpy.ndarray: A 2D numpy array of shape (k, d) containing the initialized
+                   centroids for each cluster.
+                   Returns None on failure
+    """
+
+    if not isinstance(X, np.ndarray) or X.ndim != 2:
+        return None
+    if not isinstance(k, int) or k <= 0:
+        return None
+
+    low_values = np.min(X, axis=0)
+    high_values = np.max(X, axis=0)
+
+    return np.random.uniform(low_values, high_values, size=(k, X.shape[1]))
+
+
 def kmeans(X, k, iterations=1000):
-    ''' performs K-means on a dataset
-    Args:
-        X: is a numpy.ndarray of shape (n, d) containing the dataset
-            n is the number of data points
-            d is the number of dimensions for each data point
-        k: is a positive integer containing the number of clusters
-        iterations: is a positive integer containing the maximum number of
-                    iterations that should be performed
-    Returns: C, clss, or None, None on failure
-        C: is a numpy.ndarray of shape (k, d) containing the centroid means
-           for each cluster
-        clss: is a numpy.ndarray of shape (n,) containing the index of the
-              cluster in C that each data point belongs to
-    '''
-    if type(X) is not np.ndarray or len(X.shape) != 2:
+    """
+    Performs K-means clustering on a dataset.
+
+    Parameters:
+    X (numpy.ndarray): A 2D numpy array of shape (n, d) containing the dataset.
+                       - n is the number of data points
+                       - d is the number of dimensions for each data point
+    k (int): A positive integer representing the number of clusters.
+    iterations (int): A positive integer representing the maximum number of
+                      iterations that should be performed.
+
+    Returns:
+    tuple: (C, clss) on success, or (None, None) on failure.
+           - C is a numpy.ndarray of shape (k, d) containing the centroid means
+             for each cluster.
+           - clss is a numpy.ndarray of shape (n,) containing the index of the
+             cluster in C that each data point belongs to.
+    """
+    if not isinstance(X, np.ndarray) or X.ndim != 2:
         return None, None
-    if type(k) is not int or k <= 0:
+    if not isinstance(k, int) or k <= 0:
         return None, None
-    if type(iterations) is not int or iterations <= 0:
+    if not isinstance(iterations, int) or iterations <= 0:
         return None, None
-    # initialize centroids with multivariate uniform distribution
-    n, d = X.shape
-    _min = np.amin(X, axis=0)
-    _max = np.amax(X, axis=0)
-    C = np.random.uniform(_min, _max, size=(k, d))
-    #
-    for i in range(iterations):
-        # find all the points to the nearest cluster centroid
-        # calculating Euclidean distance
-        clss = np.argmin(np.linalg.norm(X[:, None] - C, axis=-1), axis=-1)
-        newCentroid = np.copy(C)
-        # Recompute position for every centroids for every cluster
-        for c in range(k):
-            # If a cluster contains no data points during the update step
-            # reinitialize its centroid
-            # else recompute centroid with average of all points
-            if c not in clss:
-                newCentroid[c] = np.random.uniform(_min, _max)
+
+    ctds = initialize(X, k)
+    if ctds is None:
+        return None, None
+
+    for _ in range(iterations):
+        prev_ctds = np.copy(ctds)
+
+        # Calculate distances and assign clusters
+        dists = np.sqrt(np.sum((X - ctds[:, np.newaxis]) ** 2, axis=2))
+        clss = np.argmin(dists, axis=0)
+
+        for i in range(k):
+            # Mask: points present in cluster
+            cluster_mask = X[clss == i]
+            if len(cluster_mask) == 0:
+                ctds[i] = initialize(X, 1)
             else:
-                newCentroid[c] = np.mean(X[clss == c], axis=0)
-        # if Centroids of newly formed clusters do not change return
-        # else assign new centroids to recompute it
-        if np.array_equal(newCentroid, C):
-            return (C, clss)
-        else:
-            C = newCentroid
-    clss = np.argmin(np.linalg.norm(X[:, None] - C, axis=-1), axis=-1)
-    return (C, clss)
+                ctds[i] = np.mean(X[clss == i], axis=0)
+
+        # Recalculate distances and reassign clusters
+        dists = np.sqrt(np.sum((X - ctds[:, np.newaxis]) ** 2, axis=2))
+        clss = np.argmin(dists, axis=0)
+
+        # Convergence check (if points haven't changed clusters)
+        if np.allclose(ctds, prev_ctds):
+            break
+
+    return ctds, clss
