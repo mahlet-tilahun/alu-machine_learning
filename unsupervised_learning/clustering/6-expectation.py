@@ -40,9 +40,12 @@ def expectation(X, pi, m, S):
     k = pi.shape[0]
 
     # Build array of PDF values w/ each cluster
-    pdfs = [pdf(X, m[i], S[i]) for i in range(k)]
-    if any(p is None for p in pdfs):
-        return None, None
+    pdfs = []
+    for i in range(k):
+        p = pdf(X, m[i], S[i])
+        if p is None:
+            return None, None
+        pdfs.append(p)
     pdfs = np.array(pdfs)
 
     # Calculate the weighted PDFs
