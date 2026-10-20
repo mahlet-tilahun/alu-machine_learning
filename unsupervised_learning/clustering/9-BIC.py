@@ -8,20 +8,43 @@ expectation_maximization = __import__('8-EM').expectation_maximization
 
 def BIC(X, kmin=1, kmax=None, iterations=1000, tol=1e-5,
         verbose=False):
-    """Finds the best number of clusters for a GMM using BIC."""
+    """Find the best number of clusters for a GMM using BIC.
 
+    Args:
+        X (numpy.ndarray): Dataset of shape (n, d).
+        kmin (int): Minimum number of clusters to test.
+        kmax (int or None): Maximum number of clusters to test.
+        iterations (int): Maximum number of EM iterations.
+        tol (float): Convergence tolerance.
+        verbose (bool): Whether to print EM information.
+
+    Returns:
+        tuple: Best k, best GMM parameters, log likelihoods, and BICs.
+        Returns (None, None, None, None) if an input or EM result is
+        invalid.
+    """
     if (not isinstance(X, np.ndarray) or X.ndim != 2
-            or X.shape[0] == 0 or X.shape[1] == 0
-            or not isinstance(kmin, int) or isinstance(kmin, bool)
-            or kmin <= 0
-            or (kmax is not None and
-                (not isinstance(kmax, int) or isinstance(kmax, bool)
-                 or kmax <= 0 or kmax < kmin))
-            or not isinstance(iterations, int)
-            or isinstance(iterations, bool) or iterations <= 0
-            or not isinstance(tol, (int, float))
-            or isinstance(tol, bool) or tol < 0
-            or not isinstance(verbose, bool)):
+            or X.shape[0] == 0 or X.shape[1] == 0):
+        return None, None, None, None
+
+    if (not isinstance(kmin, int) or isinstance(kmin, bool)
+            or kmin <= 0):
+        return None, None, None, None
+
+    if kmax is not None:
+        if (not isinstance(kmax, int) or isinstance(kmax, bool)
+                or kmax <= 0 or kmax < kmin):
+            return None, None, None, None
+
+    if (not isinstance(iterations, int) or isinstance(iterations, bool)
+            or iterations <= 0):
+        return None, None, None, None
+
+    if (not isinstance(tol, (int, float)) or isinstance(tol, bool)
+            or tol < 0 or not np.isfinite(tol)):
+        return None, None, None, None
+
+    if not isinstance(verbose, bool):
         return None, None, None, None
 
     n, d = X.shape
@@ -29,7 +52,7 @@ def BIC(X, kmin=1, kmax=None, iterations=1000, tol=1e-5,
     if kmax is None:
         kmax = n
 
-    if kmax > n:
+    if kmax < kmin or kmax > n:
         return None, None, None, None
 
     log_likelihoods = np.zeros(kmax - kmin + 1)
@@ -44,11 +67,17 @@ def BIC(X, kmin=1, kmax=None, iterations=1000, tol=1e-5,
             X, k, iterations, tol, verbose
         )
 
-        if (result is None or len(result) != 5
-                or any(value is None for value in result)):
+        if result is None or len(result) != 5:
             return None, None, None, None
 
         pi, m, S, g, log_likelihood = result
+
+        if (pi is None or m is None or S is None
+                or g is None or log_likelihood is None):
+            return None, None, None, None
+
+        if not np.isfinite(log_likelihood):
+            return None, None, None, None
 
         log_likelihoods[idx] = log_likelihood
 
