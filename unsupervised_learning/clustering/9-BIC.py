@@ -11,16 +11,16 @@ def BIC(X, kmin=1, kmax=None, iterations=1000, tol=1e-5,
     """Find the best number of clusters for a GMM using BIC.
 
     Args:
-        X (numpy.ndarray): Dataset of shape (n, d).
+        X (numpy.ndarray): Dataset with shape (n, d).
         kmin (int): Minimum number of clusters to test.
         kmax (int or None): Maximum number of clusters to test.
         iterations (int): Maximum number of EM iterations.
-        tol (float): Convergence tolerance for EM.
+        tol (float): Convergence tolerance.
         verbose (bool): Whether to print EM progress.
 
     Returns:
-        tuple: Best k, best parameters (pi, m, S), log likelihoods,
-            and BIC values. Returns four None values on failure.
+        tuple: Best k, best GMM parameters, log likelihoods, and BICs.
+            Returns four None values if the inputs or EM results fail.
     """
     if (not isinstance(X, np.ndarray) or X.ndim != 2
             or X.shape[0] == 0 or X.shape[1] == 0):
