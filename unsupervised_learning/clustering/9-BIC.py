@@ -28,7 +28,7 @@ def BIC(X, kmin=1, kmax=None, iterations=1000, tol=1e-5,
     if kmax is None:
         kmax = n
 
-    if kmax < kmin or kmax > n:
+    if kmax < kmin or kmax > n or kmin > d:
         return None, None, None, None
 
     log_likelihoods = np.zeros(kmax - kmin + 1)
