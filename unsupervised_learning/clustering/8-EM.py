@@ -27,8 +27,8 @@ def expectation_maximization(X, k, iterations=1000, tol=1e-5,
         return None, None, None, None, None
 
     if verbose:
-        print("Log Likelihood after 0 iterations: {:.5f}".format(
-            log_likelihood))
+        print("Log Likelihood after 0 iterations: {}".format(
+            round(log_likelihood, 5)))
 
     for i in range(1, iterations + 1):
         pi, m, S = maximization(X, g)
@@ -42,8 +42,8 @@ def expectation_maximization(X, k, iterations=1000, tol=1e-5,
         converged = abs(new_likelihood - log_likelihood) <= tol
 
         if verbose and (i % 10 == 0 or i == iterations or converged):
-            print("Log Likelihood after {} iterations: {:.5f}".format(
-                i, new_likelihood))
+            print("Log Likelihood after {} iterations: {}".format(
+                i, round(new_likelihood, 5)))
 
         log_likelihood = new_likelihood
         if converged:
