@@ -26,13 +26,13 @@ def BIC(X, kmin=1, kmax=None, iterations=1000, tol=1e-5,
             or X.shape[0] == 0 or X.shape[1] == 0):
         return None, None, None, None
 
-    if (not isinstance(kmin, int) or isinstance(kmin, bool)
+    if (not isinstance(kmin, (int, np.integer)) or isinstance(kmin, bool)
             or kmin <= 0):
         return None, None, None, None
 
     if kmax is not None:
-        if (not isinstance(kmax, int) or isinstance(kmax, bool)
-                or kmax <= 0 or kmax < kmin):
+        if (not isinstance(kmax, (int, np.integer)) or isinstance(kmax, bool)
+                or kmax <= 0 or kmax <= kmin):
             return None, None, None, None
 
     if (not isinstance(iterations, int) or isinstance(iterations, bool)
@@ -51,7 +51,7 @@ def BIC(X, kmin=1, kmax=None, iterations=1000, tol=1e-5,
     if kmax is None:
         kmax = n
 
-    if kmin > n or kmax < kmin or kmax > n:
+    if kmin >= n or kmax <= kmin or kmax > n:
         return None, None, None, None
 
     log_likelihoods = np.zeros(kmax - kmin + 1)
