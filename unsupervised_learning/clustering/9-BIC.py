@@ -9,13 +9,14 @@ expectation_maximization = __import__('8-EM').expectation_maximization
 def BIC(X, kmin=1, kmax=None, iterations=1000, tol=1e-5,
         verbose=False):
     """Finds the best number of clusters for a GMM using BIC."""
+
     if (not isinstance(X, np.ndarray) or X.ndim != 2
             or X.shape[0] == 0 or X.shape[1] == 0
             or not isinstance(kmin, int) or isinstance(kmin, bool)
             or kmin <= 0
             or (kmax is not None and
                 (not isinstance(kmax, int) or isinstance(kmax, bool)
-                 or kmax <= 0))
+                 or kmax <= 0 or kmax < kmin))
             or not isinstance(iterations, int)
             or isinstance(iterations, bool) or iterations <= 0
             or not isinstance(tol, (int, float))
@@ -28,7 +29,7 @@ def BIC(X, kmin=1, kmax=None, iterations=1000, tol=1e-5,
     if kmax is None:
         kmax = n
 
-    if kmax < kmin or kmax > n or kmin > d:
+    if kmax > n:
         return None, None, None, None
 
     log_likelihoods = np.zeros(kmax - kmin + 1)
@@ -43,9 +44,8 @@ def BIC(X, kmin=1, kmax=None, iterations=1000, tol=1e-5,
             X, k, iterations, tol, verbose
         )
 
-        if (result[0] is None or result[1] is None
-                or result[2] is None or result[3] is None
-                or result[4] is None):
+        if (result is None or len(result) != 5
+                or any(value is None for value in result)):
             return None, None, None, None
 
         pi, m, S, g, log_likelihood = result
